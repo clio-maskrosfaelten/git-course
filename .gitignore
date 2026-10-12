@@ -1,0 +1,21 @@
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.Rproj.user/
+.Rhistory
+.venv/
+__pycache__/
+*.swp
+
+# Outputs that can be regenerated
+/output/
+/results/
+*.csv
+*.png
+
+# Secrets — NEVER commit these
+.env
+*.key
+credentials.json
