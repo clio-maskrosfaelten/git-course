@@ -1,6 +1,6 @@
 #analysis.R
 
-values <- c(4, 8, 15, 16, 23, 42, 100, 200)
+values <- c(4, 8, 15, 16, 23, 42, 100, 200, 300)
 
 mean_value <- mean(values)
 max_value <- max(values)
