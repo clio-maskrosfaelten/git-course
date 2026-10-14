@@ -3,6 +3,7 @@
 library(tidyverse)
 library(rsample)
 library(yardstick)
+library(glmnet)
 
 # File path
 
@@ -75,21 +76,38 @@ function(split) {
 train <- analysis(split)
 test <- assessment(split)
 
+train_x <- train |>
+  select(-is_target) |>
+  as.matrix()
+
+train_y <- if_else(
+  train$is_target == "target",
+  1,
+  0
+)
+
+test_x <- test |>
+  select(-is_target) |>
+  as.matrix()
+
 # Fit logistic regression using EEG samples as predictors
 
-model <- glm(
-  is_target ~ .,
-  data = train,
-  family = binomial
+model <- cv.glmnet(
+  x = train_x,
+  y = train_y,
+  family = "binomial",
+  alpha = 0
 )
 
 # Predict target probability for held-out trials
 
 probs <- predict(
   model,
-  newdata = test,
+  newx = test_x,
+  s = "lambda.min",
   type = "response"
-)
+) |>
+  as.numeric()
 
 preds <- if_else(
   probs >= 0.5,
