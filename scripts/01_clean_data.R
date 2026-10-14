@@ -1,85 +1,101 @@
-# clean and prepare the provided data 
+# Clean and prepare the provided EEG and behavioural data
 
 library(tidyverse)
 
-# file paths
+# -------------------------------------------------------------------------
+# File paths
+# -------------------------------------------------------------------------
+
 behav_file <- "data/simulated-dataset-2/sub-30/ses-01/sub-30_ses-01_task-nback_behav.csv"
 eeg_file <- "data/simulated-dataset-2/sub-30/ses-01/sub-30_ses-01_task-nback_eeg.csv"
 
+# -------------------------------------------------------------------------
 # Load data
+# -------------------------------------------------------------------------
+
 behav <- read_csv(behav_file)
 eeg <- read_csv(eeg_file)
 
-# Check trial structure
+# -------------------------------------------------------------------------
+# Check trial structure before joining
+# -------------------------------------------------------------------------
+
 stopifnot(nrow(behav) == nrow(eeg))
 stopifnot(n_distinct(behav$trial_id) == nrow(behav))
 stopifnot(n_distinct(eeg$trial_id) == nrow(eeg))
 stopifnot(setequal(behav$trial_id, eeg$trial_id))
 
+# -------------------------------------------------------------------------
 # Join behavioural and EEG data
+# -------------------------------------------------------------------------
+
 trial_data <- behav |>
   left_join(eeg, by = "trial_id")
 
+stopifnot(nrow(trial_data) == nrow(behav))
+
+# Inspect the joined data
 glimpse(trial_data)
-nrow(trial_data)
 
 # Check target distribution
 trial_data |>
   count(is_target)
 
+# Identify EEG time-point columns
+eeg_cols <- names(trial_data) |>
+  str_subset("^t_-?\\d+ms$")
 
-names(trial_data) |>
-  str_subset("^t_")|>
-  head()
+head(eeg_cols)
+tail(eeg_cols)
 
-names(trial_data) |>
-  str_subset("^t_") |>
-  tail()
+# Check missing EEG values
+stopifnot(sum(is.na(trial_data[eeg_cols])) == 0)
 
-# Check if baseline is treated
-# Extract baseline names, from -100 to 0 ms
-baseline_cols <- names(trial_data) |>
-  str_subset("^t_-?\\d+ms$") |>
+# -------------------------------------------------------------------------
+# Baseline correction
+# -------------------------------------------------------------------------
+
+# Use the pre-stimulus interval from -100 to 0 ms
+baseline_cols <- eeg_cols |>
   keep(~ {
     time <- as.numeric(str_extract(.x, "-?\\d+"))
     time >= -100 & time <= 0
   })
 
+# Calculate the mean pre-stimulus amplitude for each trial
 baseline_mean <- trial_data |>
   select(all_of(baseline_cols)) |>
   rowMeans()
 
+# Inspect baseline offsets before correction
 summary(baseline_mean)
 
-
-# Baseline correction
-eeg_cols <- names(trial_data) |>
-  str_subset("^t_-?\\d+ms$")
-
-trial_data_bc <- trial_data
-
-trial_data_bc[eeg_cols] <- sweep(  # for each trial, subtract the baseline mean from each EEG time point
+# Subtract each trial's baseline mean from all EEG time points
+trial_data[eeg_cols] <- sweep(
   trial_data[eeg_cols],
   1,
   baseline_mean,
   FUN = "-"
 )
 
-baseline_mean_bc <- trial_data_bc |>
+# Verify that baseline means are approximately zero after correction
+baseline_mean_corrected <- trial_data |>
   select(all_of(baseline_cols)) |>
   rowMeans()
 
-summary(baseline_mean_bc)
+summary(baseline_mean_corrected)
 
+# -------------------------------------------------------------------------
 # Save cleaned data
+# -------------------------------------------------------------------------
 
-dir.create("data/derived", showWarnings = FALSE)
+dir.create("data/derived", recursive = TRUE, showWarnings = FALSE)
 
-trial_data <- trial_data_bc
+output_file <- "data/derived/sub-30_ses-01_clean.csv"
 
 write_csv(
   trial_data,
-  "data/derived/sub-30_ses-01_clean.csv"
+  output_file
 )
 
-file.exists("data/derived/sub-30_ses-01_clean.csv")
+stopifnot(file.exists(output_file))
