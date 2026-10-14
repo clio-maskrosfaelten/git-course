@@ -19,3 +19,13 @@ __pycache__/
 .env
 *.key
 credentials.json
+git-course.code-workspace
+.Rprofile
+
+
+# folders 
+data
+tmp
+renv
+
+
