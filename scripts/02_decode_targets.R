@@ -9,14 +9,19 @@ library(glmnet)
 # Load cleaned data
 # -------------------------------------------------------------------------
 
+# Path to the cleaned, baseline-corrected trial-level dataset
 clean_file <- "data/derived/sub-30_ses-01_clean.csv"
 
+# Load the cleaned data
 dat <- read_csv(clean_file)
+
 
 # -------------------------------------------------------------------------
 # Prepare outcome labels
 # -------------------------------------------------------------------------
 
+# Convert the logical target variable (FALSE / TRUE) into a factor with
+# descriptive class labels for classification
 dat <- dat |>
   mutate(
     is_target = factor(
@@ -26,112 +31,210 @@ dat <- dat |>
     )
   )
 
-# Check class balance
+# Check that the two classes are balanced
 table(dat$is_target)
 
+
 # -------------------------------------------------------------------------
-# Select EEG features from one 50-ms window
+# Define time windows
 # -------------------------------------------------------------------------
 
-window_cols <- paste0("t_", 350:399, "ms")
+# Divide the EEG epoch into consecutive 50-ms windows.
+# The original epoch runs from -100 to 800 ms.
+#
+# Using start points from -100 to 750 gives 18 complete windows:
+# -100:-51, -50:-1, 0:49, ..., 750:799 ms.
+#
+# The final 800-ms sample is left out so that every window contains
+# exactly 50 EEG samples.
+window_starts <- seq(-100, 750, by = 50)
 
-x <- dat |>
-  select(all_of(window_cols))
-
-y <- dat$is_target
-
-# Check feature dimensions and class balance
-dim(x)
-table(y)
-
-# Combine predictors and outcome
-decode_data <- x |>
-  mutate(is_target = y)
 
 # -------------------------------------------------------------------------
 # Create cross-validation folds
 # -------------------------------------------------------------------------
 
+# Give each trial a row ID so that the same trials can be selected from
+# different EEG time windows later
+cv_data <- dat |>
+  mutate(row_id = row_number()) |>
+  select(row_id, is_target)
+
+# Fix the random seed so that the cross-validation split is reproducible
 set.seed(261014)
 
+# Divide the trials into five folds.
+# Stratification keeps approximately the same proportion of target and
+# non-target trials in each fold.
+#
+# These folds are created only once and reused for every time window.
+# This makes decoding performance more comparable across time.
 folds <- vfold_cv(
-  decode_data,
+  cv_data,
   v = 5,
   strata = is_target
 )
 
+# Inspect the cross-validation structure
 folds
 
+
 # -------------------------------------------------------------------------
-# Train and test the classifier
+# Define decoding function
 # -------------------------------------------------------------------------
 
-results <- map_dfr(
-  folds$splits,
-  function(split) {
+# This function performs the complete decoding analysis for one 50-ms
+# time window and returns its balanced classification accuracy.
+decode_window <- function(window_start) {
 
-    # Split the current fold into training and test data
-    train <- analysis(split)
-    test <- assessment(split)
+  # Define the final sample of the current 50-ms window
+  window_end <- window_start + 49
 
-    # Prepare predictor matrices and binary training labels
-    train_x <- train |>
-      select(-is_target) |>
-      as.matrix()
+  # Construct the EEG column names corresponding to this time window.
+  # For example, window_start = 350 produces:
+  # t_350ms, t_351ms, ..., t_399ms
+  window_cols <- paste0(
+    "t_",
+    window_start:window_end,
+    "ms"
+  )
 
-    train_y <- if_else(
-      train$is_target == "target",
-      1,
-      0
-    )
+  # Check that all requested EEG columns exist in the dataset
+  stopifnot(all(window_cols %in% names(dat)))
 
-    test_x <- test |>
-      select(-is_target) |>
-      as.matrix()
+  # Select the 50 EEG samples that will be used as predictors
+  # for this decoding window
+  x <- dat |>
+    select(all_of(window_cols))
 
-    # Fit ridge-regularized logistic regression
-    model <- cv.glmnet(
-      x = train_x,
-      y = train_y,
-      family = "binomial",
-      alpha = 0
-    )
+  # -----------------------------------------------------------------------
+  # Train and test the classifier across the five folds
+  # -----------------------------------------------------------------------
 
-    # Predict target probabilities for held-out trials
-    probs <- predict(
-      model,
-      newx = test_x,
-      s = "lambda.min",
-      type = "response"
-    ) |>
-      as.numeric()
+  results <- map_dfr(
+    folds$splits,
+    function(split) {
 
-    # Convert probabilities into class predictions
-    preds <- if_else(
-      probs >= 0.5,
-      "target",
-      "non_target"
-    )
+      # Get the trial IDs belonging to the training and test portions
+      # of the current fold
+      train_ids <- analysis(split)$row_id
+      test_ids <- assessment(split)$row_id
 
-    preds <- factor(
-      preds,
-      levels = levels(test$is_target)
-    )
+      # Convert the EEG predictors to matrices because glmnet expects
+      # matrix input rather than a tibble
+      train_x <- x[train_ids, ] |>
+        as.matrix()
 
-    # Store true and predicted labels
-    tibble(
-      truth = test$is_target,
-      estimate = preds
-    )
-  }
+      test_x <- x[test_ids, ] |>
+        as.matrix()
+
+      # Convert the training outcome into the numeric binary format
+      # required by glmnet:
+      # non_target = 0
+      # target     = 1
+      train_y <- if_else(
+        dat$is_target[train_ids] == "target",
+        1,
+        0
+      )
+
+      # Fit ridge-regularized logistic regression.
+      #
+      # family = "binomial" specifies binary classification.
+      # alpha = 0 specifies ridge regularization.
+      #
+      # cv.glmnet() performs internal cross-validation on the training
+      # data to choose the regularization parameter lambda.
+      model <- cv.glmnet(
+        x = train_x,
+        y = train_y,
+        family = "binomial",
+        alpha = 0
+      )
+
+      # Predict the probability that each held-out trial is a target.
+      #
+      # lambda.min is the value of lambda giving the lowest
+      # cross-validation error within the training data.
+      probs <- predict(
+        model,
+        newx = test_x,
+        s = "lambda.min",
+        type = "response"
+      ) |>
+        as.numeric()
+
+      # Convert predicted probabilities into class labels.
+      # Probabilities of 0.5 or higher are classified as targets.
+      preds <- if_else(
+        probs >= 0.5,
+        "target",
+        "non_target"
+      )
+
+      # Convert predictions to a factor with the same class ordering
+      # as the true outcome variable
+      preds <- factor(
+        preds,
+        levels = levels(dat$is_target)
+      )
+
+      # Store the true and predicted labels for this fold
+      tibble(
+        truth = dat$is_target[test_ids],
+        estimate = preds
+      )
+    }
+  )
+
+  # -----------------------------------------------------------------------
+  # Calculate decoding accuracy for this time window
+  # -----------------------------------------------------------------------
+
+  # Balanced accuracy is the average classification performance across
+  # the two classes. Chance performance for this binary classification
+  # problem is approximately 0.50.
+  accuracy <- bal_accuracy(
+    results,
+    truth = truth,
+    estimate = estimate
+  ) |>
+    pull(.estimate)
+
+  # Return one row describing this time window and its decoding result
+  tibble(
+    window_start = window_start,
+    window_end = window_end,
+    window_midpoint = (window_start + window_end) / 2,
+    balanced_accuracy = accuracy
+  )
+}
+
+
+# -------------------------------------------------------------------------
+# Decode target status across the full EEG epoch
+# -------------------------------------------------------------------------
+
+# Apply the decoding function to every 50-ms window and combine the
+# resulting rows into one table
+decoding_results <- map_dfr(
+  window_starts,
+  decode_window
 )
 
+# Inspect the time-resolved decoding results
+decoding_results
+
+
 # -------------------------------------------------------------------------
-# Evaluate decoding performance
+# Save decoding results
 # -------------------------------------------------------------------------
 
-bal_accuracy(
-  results,
-  truth = truth,
-  estimate = estimate
+# Save the derived decoding results so that later plotting scripts can
+# use them without rerunning the classifier
+output_file <- "data/derived/sub-30_ses-01_target_decoding.csv"
+
+write_csv(
+  decoding_results,
+  output_file
 )
