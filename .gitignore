@@ -16,6 +16,7 @@ __pycache__/
 /output/
 /results/
 /data/derived/
+figures/
 
 # Secrets — NEVER commit these
 

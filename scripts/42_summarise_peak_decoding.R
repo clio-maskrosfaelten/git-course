@@ -3,20 +3,30 @@
 library(tidyverse)
 
 # -------------------------------------------------------------------------
-# Settings
+# Check pipeline settings
 # -------------------------------------------------------------------------
 
-participant_id <- "sub-30"
-session_id <- "ses-01"
-
-peak_search_start_ms <- 200
-peak_search_end_ms <- 500
+stopifnot(
+  exists("participant_id"),
+  exists("session_id")
+)
 
 file_prefix <- paste0(
   participant_id,
   "_",
   session_id
 )
+
+# -------------------------------------------------------------------------
+# Peak-search settings
+# -------------------------------------------------------------------------
+
+peak_search_start_ms <- 200
+peak_search_end_ms <- 500
+
+# -------------------------------------------------------------------------
+# File paths
+# -------------------------------------------------------------------------
 
 input_file <- file.path(
   "results",
@@ -34,6 +44,9 @@ output_file <- file.path(
   )
 )
 
+stopifnot(
+  file.exists(input_file)
+)
 
 # -------------------------------------------------------------------------
 # Load decoding results
@@ -41,9 +54,17 @@ output_file <- file.path(
 
 decoding_data <- read_csv(
   input_file,
+  col_types = cols(
+    participant = col_character(),
+    session = col_character(),
+    n_back = col_integer(),
+    window_start = col_integer(),
+    window_end = col_integer(),
+    window_midpoint = col_double(),
+    balanced_accuracy = col_double()
+  ),
   show_col_types = FALSE
 )
-
 
 # -------------------------------------------------------------------------
 # Check input
@@ -66,10 +87,28 @@ stopifnot(
   all(decoding_data$participant == participant_id),
   all(decoding_data$session == session_id),
   setequal(decoding_data$n_back, 1:5),
-  all(is.finite(decoding_data$balanced_accuracy))
+  all(is.finite(decoding_data$balanced_accuracy)),
+  all(
+    decoding_data$balanced_accuracy >= 0 &
+      decoding_data$balanced_accuracy <= 1
+  )
 )
 
-# Check that each n-back condition has the same number of time windows
+# Check that each n-back level and time window has one result
+
+decoding_keys <- decoding_data |>
+  select(
+    participant,
+    session,
+    n_back,
+    window_midpoint
+  )
+
+stopifnot(
+  anyDuplicated(decoding_keys) == 0
+)
+
+# Check that each n-back level contains the same number of windows
 
 window_count_check <- decoding_data |>
   count(
@@ -78,59 +117,114 @@ window_count_check <- decoding_data |>
   )
 
 stopifnot(
-  n_distinct(window_count_check$n_windows) == 1
+  n_distinct(
+    window_count_check$n_windows
+  ) == 1
 )
 
+# Check that all decoding windows have the same width
+
+window_widths <- decoding_data |>
+  mutate(
+    window_width =
+      window_end - window_start + 1
+  ) |>
+  pull(window_width) |>
+  unique()
+
+stopifnot(
+  length(window_widths) == 1
+)
+
+# Check that window starts progress at a constant step
+
+window_structure <- decoding_data |>
+  distinct(
+    window_start,
+    window_end,
+    window_midpoint
+  ) |>
+  arrange(
+    window_start
+  )
+
+window_steps <- diff(
+  window_structure$window_start
+)
+
+stopifnot(
+  length(window_steps) > 0,
+  length(unique(window_steps)) == 1
+)
 
 # -------------------------------------------------------------------------
 # Restrict data to the peak-search interval
 # -------------------------------------------------------------------------
 
-# Peak latency is searched only within the predefined post-stimulus interval.
-# This avoids selecting an accidental maximum from baseline or late periods
-# that are not relevant to the target-related response of interest.
-
 peak_search_data <- decoding_data |>
-  filter(
+  dplyr::filter(
     window_midpoint >= peak_search_start_ms,
     window_midpoint <= peak_search_end_ms
   )
 
 stopifnot(
-  nrow(peak_search_data) > 0
-)
-
-# Check that every n-back level is represented in the search interval
-
-stopifnot(
+  nrow(peak_search_data) > 0,
   setequal(
     peak_search_data$n_back,
     1:5
   )
 )
 
+# Check that each n-back level contains the same number of search windows
+
+search_window_count <- peak_search_data |>
+  count(
+    n_back,
+    name = "n_windows"
+  )
+
+stopifnot(
+  n_distinct(
+    search_window_count$n_windows
+  ) == 1
+)
 
 # -------------------------------------------------------------------------
 # Extract peak decoding for each n-back level
 # -------------------------------------------------------------------------
 
-# For each n-back condition, select the time window with the highest
-# balanced decoding accuracy.
-#
-# Because decoding is currently calculated in non-overlapping 50-ms
-# windows, peak latency refers to the midpoint of the best-performing
-# window rather than an exact millisecond-level neural latency.
+# Identify all windows sharing the maximum balanced accuracy
 
-peak_summary <- peak_search_data |>
+peak_candidates <- peak_search_data |>
   group_by(
     participant,
     session,
     n_back
   ) |>
-  slice_max(
-    order_by = balanced_accuracy,
-    n = 1,
-    with_ties = FALSE
+  dplyr::filter(
+    balanced_accuracy ==
+      max(balanced_accuracy)
+  ) |>
+  arrange(
+    participant,
+    session,
+    n_back,
+    window_midpoint
+  )
+
+# Count tied peak windows and retain the earliest maximum
+
+peak_summary <- peak_candidates |>
+  group_by(
+    participant,
+    session,
+    n_back
+  ) |>
+  mutate(
+    n_peak_windows = n()
+  ) |>
+  slice_head(
+    n = 1
   ) |>
   ungroup() |>
   transmute(
@@ -140,12 +234,31 @@ peak_summary <- peak_search_data |>
     peak_window_start = window_start,
     peak_window_end = window_end,
     peak_latency_ms = window_midpoint,
-    peak_accuracy = balanced_accuracy
+    peak_accuracy = balanced_accuracy,
+    n_peak_windows
   ) |>
   arrange(
     n_back
   )
 
+# -------------------------------------------------------------------------
+# Check peak summary
+# -------------------------------------------------------------------------
+
+stopifnot(
+  nrow(peak_summary) == 5,
+  setequal(
+    peak_summary$n_back,
+    1:5
+  ),
+  all(
+    peak_summary$peak_latency_ms >= peak_search_start_ms &
+      peak_summary$peak_latency_ms <= peak_search_end_ms
+  ),
+  all(
+    peak_summary$n_peak_windows >= 1
+  )
+)
 
 # -------------------------------------------------------------------------
 # Inspect peak summary
@@ -153,25 +266,22 @@ peak_summary <- peak_search_data |>
 
 print(peak_summary)
 
-
 # -------------------------------------------------------------------------
-# Calculate descriptive change in peak latency
+# Summarise peak-latency range
 # -------------------------------------------------------------------------
-
-# This is descriptive only at the current single-participant stage.
-# Group-level inference should be performed only after the analysis
-# has been repeated across participants and sessions.
 
 latency_change <- peak_summary |>
   summarise(
-    earliest_peak_ms = min(peak_latency_ms),
-    latest_peak_ms = max(peak_latency_ms),
+    earliest_peak_ms =
+      min(peak_latency_ms),
+    latest_peak_ms =
+      max(peak_latency_ms),
     peak_latency_range_ms =
-      latest_peak_ms - earliest_peak_ms
+      latest_peak_ms -
+      earliest_peak_ms
   )
 
 print(latency_change)
-
 
 # -------------------------------------------------------------------------
 # Save peak summary
@@ -186,4 +296,14 @@ dir.create(
 write_csv(
   peak_summary,
   output_file
+)
+
+stopifnot(
+  file.exists(output_file)
+)
+
+cat(
+  "Saved peak decoding summary to:",
+  output_file,
+  "\n"
 )

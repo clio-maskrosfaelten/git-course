@@ -6,19 +6,43 @@ library(yardstick)
 library(glmnet)
 
 # -------------------------------------------------------------------------
-# Settings
+# Check pipeline settings
 # -------------------------------------------------------------------------
 
-participant_id <- "sub-30"
-session_id <- "ses-01"
+stopifnot(
+  exists("participant_id"),
+  exists("session_id")
+)
 
-clean_file <- file.path(
+file_prefix <- paste0(
+  participant_id,
+  "_",
+  session_id
+)
+
+# -------------------------------------------------------------------------
+# Analysis settings
+# -------------------------------------------------------------------------
+
+window_width_ms <- 50
+window_step_ms <- 25
+n_folds <- 5
+
+window_starts <- seq(
+  -100,
+  750,
+  by = window_step_ms
+)
+
+# -------------------------------------------------------------------------
+# File paths
+# -------------------------------------------------------------------------
+
+input_file <- file.path(
   "data",
   "derived",
   paste0(
-    participant_id,
-    "_",
-    session_id,
+    file_prefix,
     "_clean.csv"
   )
 )
@@ -26,48 +50,94 @@ clean_file <- file.path(
 output_file <- file.path(
   "results",
   paste0(
-    participant_id,
-    "_",
-    session_id,
+    file_prefix,
     "_target_decoding_by_nback.csv"
   )
 )
 
-window_starts <- seq(
-  -100,
-  750,
-  by = 50
+stopifnot(
+  file.exists(input_file)
 )
 
-# Search for peak decoding later within this post-stimulus interval.
-# This is not used during classification itself.
-peak_search_start_ms <- 200
-peak_search_end_ms <- 500
-
 # -------------------------------------------------------------------------
-# Load cleaned data
+# Load cleaned trial-level data
 # -------------------------------------------------------------------------
 
 dat <- read_csv(
-  clean_file,
+  input_file,
+  col_types = cols(
+    trial_id = col_character(),
+    n_back = col_integer(),
+    is_target = col_logical(),
+    .default = col_guess()
+  ),
   show_col_types = FALSE
 )
 
 # -------------------------------------------------------------------------
-# Prepare outcome labels
+# Check input data
+# -------------------------------------------------------------------------
+
+required_cols <- c(
+  "trial_id",
+  "n_back",
+  "is_target"
+)
+
+stopifnot(
+  all(required_cols %in% names(dat)),
+  nrow(dat) > 0,
+  !anyNA(dat$trial_id),
+  n_distinct(dat$trial_id) == nrow(dat),
+  !anyNA(dat$n_back),
+  setequal(dat$n_back, 1:5),
+  !anyNA(dat$is_target)
+)
+
+# Identify EEG columns from their time-point names
+
+eeg_cols <- names(dat) |>
+  str_subset(
+    "^t_-?\\d+ms$"
+  )
+
+stopifnot(
+  length(eeg_cols) > 0,
+  all(
+    map_lgl(
+      dat[eeg_cols],
+      is.numeric
+    )
+  ),
+  all(
+    map_lgl(
+      dat[eeg_cols],
+      ~ all(is.finite(.x))
+    )
+  )
+)
+
+# -------------------------------------------------------------------------
+# Prepare target labels
 # -------------------------------------------------------------------------
 
 dat <- dat |>
   mutate(
     is_target = factor(
       is_target,
-      levels = c(FALSE, TRUE),
-      labels = c("non_target", "target")
+      levels = c(
+        FALSE,
+        TRUE
+      ),
+      labels = c(
+        "non_target",
+        "target"
+      )
     )
   )
 
 # -------------------------------------------------------------------------
-# Check trial counts by condition
+# Check trial counts by n-back level and target status
 # -------------------------------------------------------------------------
 
 trial_counts <- dat |>
@@ -75,19 +145,16 @@ trial_counts <- dat |>
     n_back,
     is_target,
     name = "n_trials"
+  ) |>
+  arrange(
+    n_back,
+    is_target
   )
 
 print(trial_counts)
 
-# Check that all five n-back conditions are present
-stopifnot(
-  setequal(
-    unique(dat$n_back),
-    1:5
-  )
-)
+# Check that every n-back level contains both target classes
 
-# Check that each n-back condition contains both target classes
 class_check <- trial_counts |>
   count(
     n_back,
@@ -100,45 +167,32 @@ stopifnot(
   )
 )
 
+# Check that each class contains enough trials for cross-validation
+
+stopifnot(
+  all(
+    trial_counts$n_trials >= n_folds
+  )
+)
+
 # -------------------------------------------------------------------------
-# Define decoding function for one n-back level
+# Define decoding for one n-back level
 # -------------------------------------------------------------------------
 
 decode_nback <- function(n_back_level) {
 
-  # Select trials from one n-back condition
+  # Select trials from the current n-back level
+
   condition_data <- dat |>
-    filter(
-      n_back == n_back_level
-    ) |>
-    mutate(
-      row_id = row_number()
-    )
-
-  # Check class balance within this condition
-  condition_counts <- condition_data |>
-    count(
-      is_target,
-      name = "n_trials"
-    )
-
-  print(
-    condition_counts |>
-      mutate(
-        n_back = n_back_level,
-        .before = 1
-      )
+  dplyr::filter(
+    n_back == n_back_level
+  ) |>
+  mutate(
+    row_id = row_number()
   )
 
-  # Five-fold CV requires at least five trials in each class
-  stopifnot(
-    min(
-      condition_counts$n_trials
-    ) >= 5
-  )
+  # Create stratified cross-validation folds
 
-  # Create one set of stratified folds for this n-back condition.
-  # The same folds are reused across all time windows.
   cv_data <- condition_data |>
     select(
       row_id,
@@ -147,17 +201,17 @@ decode_nback <- function(n_back_level) {
 
   folds <- vfold_cv(
     cv_data,
-    v = 5,
+    v = n_folds,
     strata = is_target
   )
 
   # -----------------------------------------------------------------------
-  # Define decoding function for one 50-ms window
+  # Define decoding for one sliding time window
   # -----------------------------------------------------------------------
 
   decode_window <- function(window_start) {
 
-    window_end <- window_start + 49
+    window_end <- window_start + window_width_ms - 1
 
     window_cols <- paste0(
       "t_",
@@ -165,7 +219,8 @@ decode_nback <- function(n_back_level) {
       "ms"
     )
 
-    # Check that the requested EEG columns exist
+    # Check that all EEG samples in the current window are available
+
     stopifnot(
       all(
         window_cols %in% names(condition_data)
@@ -173,6 +228,7 @@ decode_nback <- function(n_back_level) {
     )
 
     # Select EEG samples used as predictors
+
     x <- condition_data |>
       select(
         all_of(window_cols)
@@ -186,8 +242,12 @@ decode_nback <- function(n_back_level) {
       folds$splits,
       function(split) {
 
+        # Identify training and test trials
+
         train_ids <- analysis(split)$row_id
         test_ids <- assessment(split)$row_id
+
+        # Convert EEG predictors to matrices
 
         train_x <- x[train_ids, ] |>
           as.matrix()
@@ -195,13 +255,16 @@ decode_nback <- function(n_back_level) {
         test_x <- x[test_ids, ] |>
           as.matrix()
 
+        # Convert training labels to binary values
+
         train_y <- if_else(
           condition_data$is_target[train_ids] == "target",
           1,
           0
         )
 
-        # Ridge-regularized logistic regression
+        # Fit ridge-regularized logistic regression
+
         model <- cv.glmnet(
           x = train_x,
           y = train_y,
@@ -210,6 +273,7 @@ decode_nback <- function(n_back_level) {
         )
 
         # Predict target probabilities for held-out trials
+
         probs <- predict(
           model,
           newx = test_x,
@@ -218,7 +282,8 @@ decode_nback <- function(n_back_level) {
         ) |>
           as.numeric()
 
-        # Convert probabilities to class predictions
+        # Convert probabilities to target-status predictions
+
         preds <- if_else(
           probs >= 0.5,
           "target",
@@ -232,6 +297,8 @@ decode_nback <- function(n_back_level) {
           )
         )
 
+        # Store true and predicted labels
+
         tibble(
           truth = condition_data$is_target[test_ids],
           estimate = preds
@@ -239,13 +306,16 @@ decode_nback <- function(n_back_level) {
       }
     )
 
-    # Calculate balanced accuracy for this time window
+    # Calculate balanced accuracy for the current window
+
     accuracy <- bal_accuracy(
       fold_results,
       truth = truth,
       estimate = estimate
     ) |>
       pull(.estimate)
+
+    # Return decoding result for the current window
 
     tibble(
       participant = participant_id,
@@ -259,7 +329,8 @@ decode_nback <- function(n_back_level) {
     )
   }
 
-  # Apply decoding across the full epoch
+  # Decode all sliding windows within the current n-back level
+
   map_dfr(
     window_starts,
     decode_window
@@ -267,7 +338,7 @@ decode_nback <- function(n_back_level) {
 }
 
 # -------------------------------------------------------------------------
-# Decode all n-back conditions
+# Decode all n-back levels
 # -------------------------------------------------------------------------
 
 set.seed(261015)
@@ -278,33 +349,28 @@ decoding_by_nback <- map_dfr(
 )
 
 # -------------------------------------------------------------------------
-# Inspect results
+# Check decoding results
 # -------------------------------------------------------------------------
+
+stopifnot(
+  nrow(decoding_by_nback) ==
+    length(window_starts) * 5,
+  !anyNA(decoding_by_nback$balanced_accuracy),
+  all(
+    is.finite(
+      decoding_by_nback$balanced_accuracy
+    )
+  ),
+  all(
+    decoding_by_nback$balanced_accuracy >= 0 &
+      decoding_by_nback$balanced_accuracy <= 1
+  )
+)
 
 print(decoding_by_nback)
 
-# Preview peak decoding within the planned search interval
-peak_preview <- decoding_by_nback |>
-  filter(
-    window_midpoint >= peak_search_start_ms,
-    window_midpoint <= peak_search_end_ms
-  ) |>
-  group_by(
-    participant,
-    session,
-    n_back
-  ) |>
-  slice_max(
-    balanced_accuracy,
-    n = 1,
-    with_ties = FALSE
-  ) |>
-  ungroup()
-
-print(peak_preview)
-
 # -------------------------------------------------------------------------
-# Save results
+# Save decoding results
 # -------------------------------------------------------------------------
 
 dir.create(
@@ -316,4 +382,14 @@ dir.create(
 write_csv(
   decoding_by_nback,
   output_file
+)
+
+stopifnot(
+  file.exists(output_file)
+)
+
+cat(
+  "Saved n-back decoding results to:",
+  output_file,
+  "\n"
 )

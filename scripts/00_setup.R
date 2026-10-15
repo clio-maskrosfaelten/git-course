@@ -1,9 +1,11 @@
 # Set up the project: restore packages and create folders
-# Run once from the project root (the folder containing renv.lock):
-#   source("scripts/00_setup.R")
+
+# Run from the project root containing renv.lock
 
 if (!file.exists("renv.lock")) {
-  stop("renv.lock not found. Set the working directory to the project root.")
+  stop(
+    "renv.lock not found. Set the working directory to the project root."
+  )
 }
 
 # -------------------------------------------------------------------------
@@ -14,22 +16,36 @@ if (!requireNamespace("renv", quietly = TRUE)) {
   install.packages("renv")
 }
 
-# Creates renv/ and .Rprofile if missing, without altering the lockfile
+# Create the renv infrastructure if it is missing
+
 if (!file.exists("renv/activate.R")) {
-  renv::init(bare = TRUE, restart = FALSE)
+  renv::init(
+    bare = TRUE,
+    restart = FALSE
+  )
 }
 
-# "auto":    restore the pinned versions if the R minor version matches renv.lock,
-#            otherwise install current versions of the required packages
-# "lockfile": always restore the pinned versions (needs matching R, and Rtools on Windows)
-# "current":  always install current versions (no compiling on Windows/macOS)
-# Current versions are installed into the project library only; renv.lock is not modified.
 install_mode <- "auto"
 
-required_pkgs <- c("tidyverse", "rsample", "yardstick", "glmnet")
+required_pkgs <- c(
+  "tidyverse",
+  "rsample",
+  "yardstick",
+  "glmnet",
+  "gsignal"
+)
 
-minor <- function(v) paste(unlist(package_version(v))[1:2], collapse = ".")
-lock_r <- renv::lockfile_read("renv.lock")$R$Version
+minor <- function(v) {
+  paste(
+    unlist(package_version(v))[1:2],
+    collapse = "."
+  )
+}
+
+lock_r <- renv::lockfile_read(
+  "renv.lock"
+)$R$Version
+
 r_matches <- minor(lock_r) == minor(getRversion())
 
 use_lockfile <- switch(
@@ -37,55 +53,86 @@ use_lockfile <- switch(
   auto = r_matches,
   lockfile = TRUE,
   current = FALSE,
-  stop("install_mode must be \"auto\", \"lockfile\" or \"current\".")
+  stop(
+    'install_mode must be "auto", "lockfile", or "current".'
+  )
 )
 
 if (use_lockfile) {
+
   if (!r_matches) {
     warning(
-      "renv.lock was created with R ", lock_r, ", you are running R ",
-      getRversion(), ". Old package versions may fail to compile."
+      "renv.lock was created with R ",
+      lock_r,
+      ", but the current R version is ",
+      getRversion(),
+      "."
     )
   }
-  # Windows source builds need Rtools (provides 'make')
-  if (.Platform$OS.type == "windows" && Sys.which("make") == "") {
+
+  if (
+    .Platform$OS.type == "windows" &&
+      Sys.which("make") == ""
+  ) {
     warning(
-      "Rtools not found. If restore fails with \"'make' not found\", install ",
-      "Rtools matching your R version from ",
-      "https://cran.r-project.org/bin/windows/Rtools/ and restart R."
+      "Rtools was not found. Source package installation may fail."
     )
   }
-  renv::restore(prompt = FALSE)
-} else {
-  message(
-    "Installing current versions of: ", paste(required_pkgs, collapse = ", "),
-    " (renv.lock, made with R ", lock_r, ", is not used)."
+
+  renv::restore(
+    prompt = FALSE
   )
-  renv::install(required_pkgs, prompt = FALSE)
+
+} else {
+
+  message(
+    "Installing current versions of: ",
+    paste(
+      required_pkgs,
+      collapse = ", "
+    )
+  )
+
+  renv::install(
+    required_pkgs,
+    prompt = FALSE
+  )
 }
 
 # -------------------------------------------------------------------------
-# Folders
+# Project folders
 # -------------------------------------------------------------------------
 
-dirs <- c("data/derived", "figures")
-for (d in dirs) dir.create(d, recursive = TRUE, showWarnings = FALSE)
-
-# -------------------------------------------------------------------------
-# Input data check
-# -------------------------------------------------------------------------
-
-input_files <- c(
-  "data/simulated-dataset-2/sub-30/ses-01/sub-30_ses-01_task-nback_behav.csv",
-  "data/simulated-dataset-2/sub-30/ses-01/sub-30_ses-01_task-nback_eeg.csv"
+dirs <- c(
+  "data/derived",
+  "results",
+  "figures"
 )
 
-missing <- input_files[!file.exists(input_files)]
-if (length(missing) > 0) {
+for (d in dirs) {
+  dir.create(
+    d,
+    recursive = TRUE,
+    showWarnings = FALSE
+  )
+}
+
+# -------------------------------------------------------------------------
+# Source data check
+# -------------------------------------------------------------------------
+
+source_data_dir <- file.path(
+  "data",
+  "simulated-dataset-2"
+)
+
+if (!dir.exists(source_data_dir)) {
   warning(
-    "Input data missing. Place the course dataset in data/ so these exist:\n",
-    paste0("  ", missing, collapse = "\n")
+    "Source dataset not found at: ",
+    source_data_dir
   )
 } else {
-  message("Setup complete: packages restored and input data found.")
+  message(
+    "Setup complete: packages available and project folders ready."
+  )
 }

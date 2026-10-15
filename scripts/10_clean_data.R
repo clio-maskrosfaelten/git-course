@@ -3,11 +3,15 @@
 library(tidyverse)
 
 # -------------------------------------------------------------------------
-# Settings
+# Check pipeline settings
 # -------------------------------------------------------------------------
 
-participant_id <- "sub-30"
-session_id <- "ses-01"
+# participant_id and session_id are supplied by 01_run_pipeline.R
+
+stopifnot(
+  exists("participant_id"),
+  exists("session_id")
+)
 
 file_prefix <- paste0(
   participant_id,
@@ -50,6 +54,13 @@ output_file <- file.path(
   )
 )
 
+# Check that input files exist
+
+stopifnot(
+  file.exists(behav_file),
+  file.exists(eeg_file)
+)
+
 # -------------------------------------------------------------------------
 # Load data
 # -------------------------------------------------------------------------
@@ -90,9 +101,11 @@ stopifnot(
 )
 
 # Inspect the joined data
+
 glimpse(trial_data)
 
 # Check target distribution
+
 trial_data |>
   count(is_target) |>
   print()
@@ -114,6 +127,7 @@ stopifnot(
 )
 
 # Check missing EEG values
+
 stopifnot(
   sum(
     is.na(
@@ -127,6 +141,7 @@ stopifnot(
 # -------------------------------------------------------------------------
 
 # Use the pre-stimulus interval from -100 to 0 ms
+
 baseline_cols <- eeg_cols |>
   keep(
     ~ {
@@ -147,6 +162,7 @@ stopifnot(
 )
 
 # Calculate the mean pre-stimulus amplitude for each trial
+
 baseline_mean <- trial_data |>
   select(
     all_of(baseline_cols)
@@ -154,9 +170,11 @@ baseline_mean <- trial_data |>
   rowMeans()
 
 # Inspect baseline offsets before correction
+
 summary(baseline_mean)
 
 # Subtract each trial's baseline mean from all EEG time points
+
 trial_data[eeg_cols] <- sweep(
   trial_data[eeg_cols],
   1,
@@ -165,6 +183,7 @@ trial_data[eeg_cols] <- sweep(
 )
 
 # Verify that baseline means are approximately zero after correction
+
 baseline_mean_corrected <- trial_data |>
   select(
     all_of(baseline_cols)

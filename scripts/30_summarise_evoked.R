@@ -1,19 +1,42 @@
-# Summarise evoked EEG responses and behaviour for participant 30
+# Summarise evoked EEG responses
 
 library(tidyverse)
 
 # -------------------------------------------------------------------------
-# Settings and input
+# Check pipeline settings
 # -------------------------------------------------------------------------
 
-participant_id <- "sub-30"
-session_id <- "ses-01"
+stopifnot(
+  exists("participant_id"),
+  exists("session_id")
+)
+
+file_prefix <- paste0(
+  participant_id,
+  "_",
+  session_id
+)
+
+# -------------------------------------------------------------------------
+# Input file
+# -------------------------------------------------------------------------
 
 input_file <- file.path(
   "data",
   "derived",
-  paste0(participant_id, "_", session_id, "_clean.csv")
+  paste0(
+    file_prefix,
+    "_clean.csv"
+  )
 )
+
+stopifnot(
+  file.exists(input_file)
+)
+
+# -------------------------------------------------------------------------
+# Load cleaned trial-level data
+# -------------------------------------------------------------------------
 
 trial_data <- read_csv(
   input_file,
@@ -21,42 +44,55 @@ trial_data <- read_csv(
     trial_id = col_character(),
     n_back = col_integer(),
     is_target = col_logical(),
-    response_given = col_logical(),
-    correct = col_logical(),
-    rt_ms = col_double(),
     .default = col_guess()
   ),
-  na = c("", "NA")
+  show_col_types = FALSE
 )
 
 # -------------------------------------------------------------------------
-# Check the input
+# Check input data
 # -------------------------------------------------------------------------
 
 required_cols <- c(
-  "trial_id", "n_back", "is_target",
-  "response_given", "correct", "rt_ms"
+  "trial_id",
+  "n_back",
+  "is_target"
 )
 
-stopifnot(all(required_cols %in% names(trial_data)))
-stopifnot(nrow(trial_data) > 0)
-stopifnot(!anyNA(trial_data$trial_id))
-stopifnot(n_distinct(trial_data$trial_id) == nrow(trial_data))
-stopifnot(!anyNA(trial_data$n_back))
-stopifnot(setequal(trial_data$n_back, 1:5))
-stopifnot(!anyNA(trial_data$is_target))
-stopifnot(!anyNA(trial_data$response_given))
-stopifnot(!anyNA(trial_data$correct))
+stopifnot(
+  all(required_cols %in% names(trial_data)),
+  nrow(trial_data) > 0,
+  !anyNA(trial_data$trial_id),
+  n_distinct(trial_data$trial_id) == nrow(trial_data),
+  !anyNA(trial_data$n_back),
+  setequal(trial_data$n_back, 1:5),
+  !anyNA(trial_data$is_target)
+)
+
+# Identify EEG columns from their time-point names
 
 eeg_cols <- names(trial_data) |>
-  str_subset("^t_-?\\d+ms$")
+  str_subset(
+    "^t_-?\\d+ms$"
+  )
 
-stopifnot(length(eeg_cols) > 0)
-stopifnot(all(map_lgl(trial_data[eeg_cols], is.numeric)))
-stopifnot(all(map_lgl(
-  trial_data[eeg_cols],
-  ~ all(is.finite(.x))
-)))
+stopifnot(
+  length(eeg_cols) > 0,
+  all(
+    map_lgl(
+      trial_data[eeg_cols],
+      is.numeric
+    )
+  ),
+  all(
+    map_lgl(
+      trial_data[eeg_cols],
+      ~ all(is.finite(.x))
+    )
+  )
+)
+
+# Add participant and session identifiers
 
 trial_data <- trial_data |>
   mutate(
@@ -66,61 +102,8 @@ trial_data <- trial_data |>
   )
 
 # -------------------------------------------------------------------------
-# Count trials by condition and target status
-# -------------------------------------------------------------------------
-
-trial_counts <- trial_data |>
-  group_by(participant, session, n_back, is_target) |>
-  summarise(
-    n_trials = n(),
-    n_correct = sum(correct),
-    n_incorrect = sum(!correct),
-    .groups = "drop"
-  ) |>
-  arrange(participant, session, n_back, is_target)
-
-print(trial_counts)
-
-# -------------------------------------------------------------------------
-# Summarise behavioural performance
-# -------------------------------------------------------------------------
-
-# Return NA when no observations are available.
-mean_or_na <- function(x) {
-  if (length(x) == 0 || all(is.na(x))) {
-    return(NA_real_)
-  }
-
-  mean(x, na.rm = TRUE)
-}
-
-behavioural_summary <- trial_data |>
-  group_by(participant, session, n_back) |>
-  summarise(
-    n_trials = n(),
-    n_targets = sum(is_target),
-    n_nontargets = sum(!is_target),
-    accuracy = mean(correct),
-    hit_rate = mean_or_na(response_given[is_target]),
-    false_alarm_rate = mean_or_na(response_given[!is_target]),
-    n_correct_target_rt = sum(
-      is_target & correct & response_given & !is.na(rt_ms)
-    ),
-    mean_correct_target_rt_ms = mean_or_na(
-      rt_ms[is_target & correct & response_given]
-    ),
-    .groups = "drop"
-  ) |>
-  arrange(participant, session, n_back)
-
-print(behavioural_summary)
-
-# -------------------------------------------------------------------------
 # Convert EEG samples to long format
 # -------------------------------------------------------------------------
-
-# The input is already baseline-corrected by 01_clean_data.R.
-# Retain both correct and incorrect trials for this primary summary.
 
 eeg_long <- trial_data |>
   select(
@@ -135,7 +118,9 @@ eeg_long <- trial_data |>
     cols = all_of(eeg_cols),
     names_to = "time_ms",
     names_pattern = "^t_(-?\\d+)ms$",
-    names_transform = list(time_ms = as.integer),
+    names_transform = list(
+      time_ms = as.integer
+    ),
     values_to = "amplitude_uv"
   )
 
@@ -166,7 +151,7 @@ evoked_summary <- eeg_long |>
   )
 
 # -------------------------------------------------------------------------
-# Save summaries
+# Save evoked summary
 # -------------------------------------------------------------------------
 
 output_dir <- "results"
@@ -177,19 +162,25 @@ dir.create(
   showWarnings = FALSE
 )
 
-file_prefix <- paste0(participant_id, "_", session_id)
-
-write_csv(
-  trial_counts,
-  file.path(output_dir, paste0(file_prefix, "_trial_counts.csv"))
-)
-
-write_csv(
-  behavioural_summary,
-  file.path(output_dir, paste0(file_prefix, "_behavioural_summary.csv"))
+output_file <- file.path(
+  output_dir,
+  paste0(
+    file_prefix,
+    "_evoked_summary.csv"
+  )
 )
 
 write_csv(
   evoked_summary,
-  file.path(output_dir, paste0(file_prefix, "_evoked_summary.csv"))
+  output_file
+)
+
+stopifnot(
+  file.exists(output_file)
+)
+
+cat(
+  "Saved evoked summary to:",
+  output_file,
+  "\n"
 )
