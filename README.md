@@ -24,8 +24,7 @@ For each n-back level, the analysis identifies the post-stimulus time window bet
 Behavioural performance and evoked target-related responses are analysed as complementary measures of task difficulty and neural response dynamics.
 
 ## Flowchart
-
-
+<img width="688" height="752" alt="flowchart" src="https://github.com/user-attachments/assets/0c162caa-9324-46d1-a1c3-7cc4e653ac29" />
 
 ## Scripts
 
@@ -77,12 +76,11 @@ renv::restore()
 
 ## Preliminary results
 
-### Target decoding across n-back levels
-
-
-
-
 ### Target-related evoked response
+<img width="3000" height="1650" alt="group_evoked_target_difference" src="https://github.com/user-attachments/assets/47604d13-a1e9-44ba-8802-e5d2ae9ad75f" />
+
+### Target decoding across n-back levels
+<img width="2700" height="1650" alt="group_target_decoding_by_nback" src="https://github.com/user-attachments/assets/b96dc429-f8dc-406d-8193-02b207cad15c" />
 
 
 
