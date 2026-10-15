@@ -72,7 +72,7 @@ The project uses `renv` for package management.
 
 ```r
 renv::restore()
-
+```
 
 ## Preliminary results
 
