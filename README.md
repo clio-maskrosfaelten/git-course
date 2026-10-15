@@ -24,7 +24,7 @@ For each n-back level, the analysis identifies the post-stimulus time window bet
 Behavioural performance and evoked target-related responses are analysed as complementary measures of task difficulty and neural response dynamics.
 
 ## Flowchart
-<img width="688" height="752" alt="flowchart" src="https://github.com/user-attachments/assets/0c162caa-9324-46d1-a1c3-7cc4e653ac29" />
+<img width="688" height="752" alt="flowchart" src="https://github.com/user-attachments/assets/e64f3f81-42cd-4fe5-8165-e994317826f3" />
 
 ## Scripts
 
