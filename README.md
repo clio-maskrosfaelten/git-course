@@ -17,7 +17,6 @@ The EEG data contain one time series per trial rather than multichannel recordin
 
 **Does increased n-back load shift the timing of peak target decoding?**
 
-Does increased n-back load shift the timing of peak target decoding?
 Target versus non-target status is decoded separately within each n-back level to estimate when target-related information is most discriminable in the EEG signal. For each load level, the analysis identifies the post-stimulus time window with the highest decoding accuracy, and tests whether this peak occurs later as n-back load increases.
 Behavioural performance and evoked target-related responses are analysed as complementary measures of task performance and neural response dynamics.
 
