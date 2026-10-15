@@ -17,11 +17,9 @@ The EEG data contain one time series per trial rather than multichannel recordin
 
 **Does increased n-back load shift the timing of peak target decoding?**
 
-Target and non-target trials are decoded separately within each n-back level using 50-ms sliding EEG windows with a 25-ms step. Ridge-regularized logistic regression with stratified five-fold cross-validation is used to estimate decoding accuracy over time.
-
-For each n-back level, the analysis identifies the post-stimulus time window between 200 and 500 ms in which target vs non-target decoding accuracy is highest. Peak decoding latency is then compared across working-memory loads.
-
-Behavioural performance and evoked target-related responses are analysed as complementary measures of task difficulty and neural response dynamics.
+Does increased n-back load shift the timing of peak target decoding?
+Target versus non-target status is decoded separately within each n-back level to estimate when target-related information is most discriminable in the EEG signal. For each load level, the analysis identifies the post-stimulus time window with the highest decoding accuracy, and tests whether this peak occurs later as n-back load increases.
+Behavioural performance and evoked target-related responses are analysed as complementary measures of task performance and neural response dynamics.
 
 ## Flowchart
 <img width="688" height="752" alt="flowchart" src="https://github.com/user-attachments/assets/e64f3f81-42cd-4fe5-8165-e994317826f3" />
