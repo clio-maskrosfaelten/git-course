@@ -15,7 +15,7 @@ __pycache__/
 
 /output/
 /results/
-/data/derived/
+/data/
 /figures/*
 !/figures/group_target_decoding_by_nback.png
 !/figures/group_evoked_target_difference.png
@@ -45,6 +45,3 @@ Rplots.pdf
 
 # Flowcharts
 flowchart.drawio
-
-# Data folder
-/data/
