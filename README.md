@@ -9,7 +9,25 @@ Each trial contains:
 - behavioural informaiton
 - a simulated EEG time seriese from -100 to 800 ms, no channel dimension
 
+## Setup
+The package environment is managed with [renv](https://rstudio.github.io/renv/) (versions are recorded in `renv.lock`).
+
+1. Open the project folder in R/Positron so that the working directory is the project root.
+2. Run the setup script:
+   ```r
+   source("scripts/00_setup.R")
+   ```
+   This installs renv if needed, restores the packages from `renv.lock`, and creates `data/derived/` and `figures/`.
+3. Place the course dataset in `data/` so that the following exists (the data are not tracked in git):
+   `data/simulated-dataset-2/sub-30/ses-01/sub-30_ses-01_task-nback_{behav,eeg}.csv`
+4. Run the analysis scripts in order (`01_clean_data.R`, `02_decode_targets.R`, `03_plot_decoding.R`), always from the project root.
+
+Manual alternative: `install.packages("renv"); renv::restore()`.
+
 ## Analysis
+
+### `00_setup.R`
+Restores the renv environment, creates output folders and checks that the input data are present.
 
 ### `01_clean_data.R`
 Loads the behavioural and EEG files for the current participant and session.
