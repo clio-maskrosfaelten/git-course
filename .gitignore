@@ -45,3 +45,6 @@ Rplots.pdf
 
 # Flowcharts
 flowchart.drawio
+
+# Data folder
+/data/
