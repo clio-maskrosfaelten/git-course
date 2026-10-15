@@ -1,8 +1,10 @@
 # OS noise
+
 .DS_Store
 Thumbs.db
 
 # Editor / IDE
+
 .Rproj.user/
 .Rhistory
 .venv/
@@ -10,22 +12,30 @@ __pycache__/
 *.swp
 
 # Outputs that can be regenerated
+
 /output/
 /results/
-*.csv
-
+/data/derived/
 
 # Secrets — NEVER commit these
+
 .env
 *.key
 credentials.json
 git-course.code-workspace
 .Rprofile
 
+# Temporary folders
 
-# folders 
-data
-tmp
-renv
+tmp/
+
+# renv local environment files
+
+renv/library/
+renv/staging/
+renv/python/
+renv/cache/
 
 
+# Weird fild
+Rplots.pdf
