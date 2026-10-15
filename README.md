@@ -22,6 +22,8 @@ The package environment is managed with [renv](https://rstudio.github.io/renv/) 
    `data/simulated-dataset-2/sub-30/ses-01/sub-30_ses-01_task-nback_{behav,eeg}.csv`
 4. Run the analysis scripts in order (`01_clean_data.R`, `02_decode_targets.R`, `03_plot_decoding.R`), always from the project root.
 
+By default (`install_mode <- "auto"` at the top of the package section in `00_setup.R`), the pinned versions are restored only if your R minor version matches `renv.lock` (R 4.5). On other R versions, current versions of the required packages (`tidyverse`, `rsample`, `yardstick`, `glmnet`) are installed instead, and `renv.lock` is left unchanged. Set `install_mode` to `"lockfile"` or `"current"` to force either behaviour. Restoring old versions from source on Windows needs [Rtools](https://cran.r-project.org/bin/windows/Rtools/).
+
 Manual alternative: `install.packages("renv"); renv::restore()`.
 
 ## Analysis
