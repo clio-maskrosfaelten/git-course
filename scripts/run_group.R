@@ -14,7 +14,9 @@ group_scripts <- c(
   "scripts/50_combine_results.R",
   "scripts/51_summarise_group_decoding.R",
   "scripts/52_plot_group_decoding.R",
-  "scripts/53_test_peak_latency.R"
+  "scripts/53_summarise_group_evoked.R",
+  "scripts/54_plot_group_evoked.R",
+  "scripts/55_test_peak_latency.R"
 )
 
 stopifnot(

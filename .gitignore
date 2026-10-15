@@ -16,15 +16,16 @@ __pycache__/
 /output/
 /results/
 /data/derived/
-/figures/
+/figures/*
+!/figures/group_target_decoding_by_nback.png
+!/figures/group_evoked_target_difference.png
 
-# Secrets — NEVER commit these
+# Secrets
 
 .env
 *.key
 credentials.json
 git-course.code-workspace
-.Rprofile
 
 # Temporary folders
 
@@ -37,6 +38,6 @@ renv/staging/
 renv/python/
 renv/cache/
 
+# Automatically generated files
 
-# Weird fild
 Rplots.pdf

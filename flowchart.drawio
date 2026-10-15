@@ -1,53 +1,84 @@
 <mxfile host="65bd71144e">
     <diagram id="A6CUJ4SjgFDUfcEda0qg" name="Page-1">
-        <mxGraphModel dx="844" dy="407" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="872" dy="776" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="3Edp1k7bYFUaclDSQqKn-7" edge="1" parent="1" source="jFeEMhVpGa43WwgqFxLm-38" style="edgeStyle=orthogonalEdgeStyle;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="jFeEMhVpGa43WwgqFxLm-41">
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-12" edge="1" parent="1" source="jFeEMhVpGa43WwgqFxLm-49" style="edgeStyle=none;html=1;" target="jFeEMhVpGa43WwgqFxLm-52" value="">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="jFeEMhVpGa43WwgqFxLm-38" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="02_summarise_eboked.R" vertex="1">
-                    <mxGeometry height="60" width="160" x="250" y="338" as="geometry"/>
+                <mxCell id="jFeEMhVpGa43WwgqFxLm-49" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="PREPARE DATA&lt;br&gt;&lt;div&gt;Joint trials + baseline correction&lt;/div&gt;" vertex="1">
+                    <mxGeometry height="60" width="200" x="314" y="140" as="geometry"/>
                 </mxCell>
-                <mxCell id="3Edp1k7bYFUaclDSQqKn-8" edge="1" parent="1" source="jFeEMhVpGa43WwgqFxLm-41" style="edgeStyle=none;html=1;" target="3Edp1k7bYFUaclDSQqKn-5" value="">
-                    <mxGeometry relative="1" as="geometry"/>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-13" edge="1" parent="1" source="jFeEMhVpGa43WwgqFxLm-52" style="edgeStyle=elbowEdgeStyle;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="r7-q-d_gp2vVArG1PcsK-5">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="414" y="370" as="targetPoint"/>
+                    </mxGeometry>
                 </mxCell>
-                <mxCell id="3Edp1k7bYFUaclDSQqKn-10" edge="1" parent="1" source="jFeEMhVpGa43WwgqFxLm-41" style="edgeStyle=none;html=1;" target="jFeEMhVpGa43WwgqFxLm-45" value="">
-                    <mxGeometry relative="1" as="geometry"/>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-20" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="r7-q-d_gp2vVArG1PcsK-1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="414" y="340" as="sourcePoint"/>
+                    </mxGeometry>
                 </mxCell>
-                <mxCell id="jFeEMhVpGa43WwgqFxLm-41" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="evoked/bahav per sub" vertex="1">
-                    <mxGeometry height="60" width="160" x="120" y="435" as="geometry"/>
-                </mxCell>
-                <mxCell id="jFeEMhVpGa43WwgqFxLm-43" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="05_plot_decoding.R" vertex="1">
-                    <mxGeometry height="60" width="170" x="380" y="555" as="geometry"/>
-                </mxCell>
-                <mxCell id="3Edp1k7bYFUaclDSQqKn-9" edge="1" parent="1" source="jFeEMhVpGa43WwgqFxLm-45" style="edgeStyle=none;html=1;" target="jFeEMhVpGa43WwgqFxLm-43" value="">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="jFeEMhVpGa43WwgqFxLm-45" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="04_decode_target.R" vertex="1">
-                    <mxGeometry height="60" width="170" x="380" y="435" as="geometry"/>
-                </mxCell>
-                <mxCell id="jFeEMhVpGa43WwgqFxLm-53" edge="1" parent="1" source="jFeEMhVpGa43WwgqFxLm-49" style="edgeStyle=none;html=1;" target="jFeEMhVpGa43WwgqFxLm-52" value="">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="jFeEMhVpGa43WwgqFxLm-49" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="prepare data&lt;br&gt;(01_clean_data.R)" vertex="1">
-                    <mxGeometry height="60" width="160" x="250" y="150" as="geometry"/>
-                </mxCell>
-                <mxCell id="3Edp1k7bYFUaclDSQqKn-6" edge="1" parent="1" source="jFeEMhVpGa43WwgqFxLm-52" style="edgeStyle=none;html=1;" target="jFeEMhVpGa43WwgqFxLm-38" value="">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="jFeEMhVpGa43WwgqFxLm-52" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="trial data&lt;div&gt;(data/sub-XX_ses-XX_clean.csv)&lt;/div&gt;" vertex="1">
-                    <mxGeometry height="60" width="160" x="250" y="240" as="geometry"/>
+                <mxCell id="jFeEMhVpGa43WwgqFxLm-52" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Clean trail-level dataset" vertex="1">
+                    <mxGeometry height="60" width="200" x="314" y="240" as="geometry"/>
                 </mxCell>
                 <mxCell id="jFeEMhVpGa43WwgqFxLm-56" edge="1" parent="1" source="jFeEMhVpGa43WwgqFxLm-55" style="edgeStyle=none;html=1;" target="jFeEMhVpGa43WwgqFxLm-49" value="">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="jFeEMhVpGa43WwgqFxLm-55" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="raw data" vertex="1">
-                    <mxGeometry height="60" width="160" x="250" y="70" as="geometry"/>
+                <mxCell id="jFeEMhVpGa43WwgqFxLm-55" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="RAW DATA&lt;div&gt;Behaviour + EEG&lt;/div&gt;" vertex="1">
+                    <mxGeometry height="60" width="200" x="314" y="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="3Edp1k7bYFUaclDSQqKn-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="03_plot_evoked.R" vertex="1">
-                    <mxGeometry height="60" width="160" x="120" y="550" as="geometry"/>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-22" edge="1" parent="1" source="r7-q-d_gp2vVArG1PcsK-1" style="edgeStyle=none;html=1;" target="r7-q-d_gp2vVArG1PcsK-3" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;BEHAVIOIR&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;Accuracy / RT&lt;/font&gt;&lt;/div&gt;" vertex="1">
+                    <mxGeometry height="60" width="189" x="80" y="410" as="geometry"/>
+                </mxCell>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-24" edge="1" parent="1" source="r7-q-d_gp2vVArG1PcsK-2" style="edgeStyle=none;html=1;" target="r7-q-d_gp2vVArG1PcsK-7" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;div&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;&lt;font color=&quot;#000000&quot;&gt;DECODING&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: rgb(63, 63, 63);&quot;&gt;Target vs non-target&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;across sliding windows&lt;/span&gt;&lt;/div&gt;" vertex="1">
+                    <mxGeometry height="60" width="200" x="559" y="410" as="geometry"/>
+                </mxCell>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="&lt;span style=&quot;background-color: transparent;&quot;&gt;&lt;font color=&quot;#000000&quot;&gt;Behavioural summarise&lt;br&gt;&amp;amp; plots&lt;/font&gt;&lt;/span&gt;" vertex="1">
+                    <mxGeometry height="60" width="200" x="74.5" y="520" as="geometry"/>
+                </mxCell>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-23" edge="1" parent="1" source="r7-q-d_gp2vVArG1PcsK-5" style="edgeStyle=none;html=1;" target="r7-q-d_gp2vVArG1PcsK-6" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="EVOKED RESPONSE&lt;div&gt;Target / non-target&lt;/div&gt;&lt;div&gt;n-back level&lt;/div&gt;" vertex="1">
+                    <mxGeometry height="60" width="200" x="314" y="410" as="geometry"/>
+                </mxCell>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Evoked-response summaries&lt;div&gt;&amp;amp; plots&lt;/div&gt;" vertex="1">
+                    <mxGeometry height="60" width="200" x="314" y="520" as="geometry"/>
+                </mxCell>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-25" edge="1" parent="1" source="r7-q-d_gp2vVArG1PcsK-7" style="edgeStyle=none;html=1;" target="r7-q-d_gp2vVArG1PcsK-8" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Decoding time course by n-back" vertex="1">
+                    <mxGeometry height="60" width="200" x="560" y="520" as="geometry"/>
+                </mxCell>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-26" edge="1" parent="1" source="r7-q-d_gp2vVArG1PcsK-8" style="edgeStyle=none;html=1;" target="r7-q-d_gp2vVArG1PcsK-9" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;Identify &lt;br&gt;peak decoding time window&lt;/font&gt;&lt;/div&gt;" vertex="1">
+                    <mxGeometry height="60" width="200" x="560" y="625" as="geometry"/>
+                </mxCell>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Peak decoding latency&lt;div&gt;&amp;amp; accuracy&lt;/div&gt;" vertex="1">
+                    <mxGeometry height="60" width="200" x="560" y="730" as="geometry"/>
+                </mxCell>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-11" edge="1" parent="1" style="edgeStyle=none;html=1;" value="">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="410" y="120" as="sourcePoint"/>
+                        <mxPoint x="410" y="160" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="r7-q-d_gp2vVArG1PcsK-21" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="414" y="340" as="sourcePoint"/>
+                        <mxPoint x="670" y="410" as="targetPoint"/>
+                    </mxGeometry>
                 </mxCell>
             </root>
         </mxGraphModel>
