@@ -40,4 +40,8 @@ renv/cache/
 
 # Automatically generated files
 
+# Weird files
 Rplots.pdf
+
+# Flowcharts
+flowchart.drawio
